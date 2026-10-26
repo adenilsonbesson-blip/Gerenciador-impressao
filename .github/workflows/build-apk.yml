@@ -41,9 +41,14 @@ jobs:
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
 
+          # Garante permissão de escrita para o usuário runner no diretório do SDK
+          sudo chown -R $USER:$USER "$ANDROID_HOME" 2>/dev/null || true
+
+          # Gera local.properties dinamicamente no runner para localizar o SDK com precisão
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
           # Pré-aprova todas as licenças do Android SDK
-          sudo mkdir -p "$ANDROID_HOME/licenses" || mkdir -p "$ANDROID_HOME/licenses"
-          sudo chown -R $USER:$USER "$ANDROID_HOME/licenses" 2>/dev/null || true
+          mkdir -p "$ANDROID_HOME/licenses"
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_HOME/licenses/android-sdk-license"
           echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$ANDROID_HOME/licenses/android-sdk-license"
           echo "84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
@@ -52,8 +57,12 @@ jobs:
           echo "33b6a2b64607f11b759f320ef9dff4ae5c47d97a" > "$ANDROID_HOME/licenses/google-gdk-license"
           echo "e9acab5b5fbb560a72cfa4eec63b3ce86aab9d16" > "$ANDROID_HOME/licenses/mips-android-sysimage-license"
 
+          # Aceita licenças e instala platforms;android-36 e build-tools
           if [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
             yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+            echo "Verificando e instalando plataforma Android SDK 36..."
+            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" || true
+            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "build-tools;36.0.0" || true
           fi
 
       - name: Prepare Keystore and Environment
