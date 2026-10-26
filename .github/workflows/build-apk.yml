@@ -41,10 +41,10 @@ jobs:
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
 
-          # Garante permissões completas de escrita para o runner
+          # Garante permissões de escrita para o runner
           sudo chown -R $USER:$USER "$ANDROID_HOME" 2>/dev/null || true
 
-          # Gera local.properties para garantir que o Gradle aponte para o SDK correto
+          # Gera local.properties
           echo "sdk.dir=$ANDROID_HOME" > local.properties
 
           # Pré-aprova todas as licenças do Android SDK
@@ -61,13 +61,13 @@ jobs:
           # Aceita licenças e instala platforms;android-36 e build-tools
           if [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
             yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
-            echo "Instalando plataforma Android SDK 36..."
+            echo "Instalando plataforma Android SDK 36 e ferramentas..."
             "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" || true
           fi
 
       - name: Prepare Keystore and Environment
         run: |
-          # Restaura debug.keystore a partir de debug.keystore.base64
+          # Restaura debug.keystore
           if [ -f "debug.keystore.base64" ]; then
             echo "Restaurando debug.keystore a partir de debug.keystore.base64..."
             base64 -d debug.keystore.base64 > debug.keystore
@@ -78,23 +78,42 @@ jobs:
               -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
 
-          # Garante arquivo .env
+          # Garante arquivos de segredos (.env e .env.example)
+          if [ ! -f ".env.example" ]; then
+            echo "GEMINI_API_KEY=" > .env.example
+          fi
           if [ ! -f ".env" ]; then
-            if [ -f ".env.example" ]; then
-              cp .env.example .env
-            else
-              touch .env
-            fi
+            cp .env.example .env
           fi
 
-          # Concede permissão de execução ao script gradlew
           chmod +x gradlew
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build Debug APK with Gradle
-        run: ./gradlew assembleDebug --no-daemon --no-configuration-cache --stacktrace
+        id: gradle_build
+        run: |
+          echo "Iniciando compilação do APK..."
+          set +e
+          ./gradlew assembleDebug --no-daemon --no-configuration-cache --stacktrace 2>&1 | tee build_output.log
+          GRADLE_EXIT_CODE=${PIPESTATUS[0]}
+          set -e
+
+          if [ $GRADLE_EXIT_CODE -ne 0 ]; then
+            echo "============================================================"
+            echo "::: PROMPT DE DIAGNÓSTICO DO ERRO DE COMPILAÇÃO :::"
+            echo "============================================================"
+            tail -n 60 build_output.log
+            echo "============================================================"
+            echo "### ❌ Falha na Compilação do APK" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 40 build_output.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit $GRADLE_EXIT_CODE
+          else
+            echo "### ✅ Compilação do APK Concluída com Sucesso!" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Locate Generated APK
         id: find_apk
