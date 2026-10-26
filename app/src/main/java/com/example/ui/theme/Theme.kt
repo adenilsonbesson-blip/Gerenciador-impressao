@@ -1,0 +1,66 @@
+package com.example.ui.theme
+
+import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+
+private val DarkColorScheme = darkColorScheme(
+    primary = EpsonCyan,
+    onPrimary = Color.Black,
+    primaryContainer = EpsonBlueDark,
+    onPrimaryContainer = Color.White,
+    secondary = EcoGreen,
+    onSecondary = Color.Black,
+    tertiary = VividDraftOrange,
+    background = Slate900,
+    surface = Slate800,
+    surfaceVariant = Slate700,
+    onBackground = Color(0xFFF1F5F9),
+    onSurface = Color(0xFFF1F5F9)
+)
+
+private val LightColorScheme = lightColorScheme(
+    primary = EpsonBluePrimary,
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFD6E8FF),
+    onPrimaryContainer = EpsonBlueDark,
+    secondary = EcoGreen,
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFD1F4E4),
+    onSecondaryContainer = EcoGreenDark,
+    tertiary = VividDraftOrange,
+    background = Slate50,
+    surface = Color.White,
+    surfaceVariant = Slate100,
+    onBackground = Slate900,
+    onSurface = Slate900
+)
+
+@Composable
+fun MyApplicationTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false, // Keep branded high-contrast theme for precision printing
+    content: @Composable () -> Unit
+) {
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        content = content
+    )
+}

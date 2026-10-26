@@ -1,0 +1,6 @@
+{
+  "name": "EcoPrint Hub",
+  "description": "Aplicativo de impressão Wi-Fi com driver Epson L3250+, modo livreto e rascunho vívido",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
