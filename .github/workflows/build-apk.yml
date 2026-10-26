@@ -24,11 +24,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Configure Android SDK & Licenses
         run: |
@@ -41,14 +41,15 @@ jobs:
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
 
-          # Garante permissão de escrita para o usuário runner no diretório do SDK
+          # Garante permissões completas de escrita para o runner
           sudo chown -R $USER:$USER "$ANDROID_HOME" 2>/dev/null || true
 
-          # Gera local.properties dinamicamente no runner para localizar o SDK com precisão
+          # Gera local.properties para garantir que o Gradle aponte para o SDK correto
           echo "sdk.dir=$ANDROID_HOME" > local.properties
 
           # Pré-aprova todas as licenças do Android SDK
-          mkdir -p "$ANDROID_HOME/licenses"
+          mkdir -p "$ANDROID_HOME/licenses" 2>/dev/null || sudo mkdir -p "$ANDROID_HOME/licenses"
+          sudo chown -R $USER:$USER "$ANDROID_HOME/licenses" 2>/dev/null || true
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_HOME/licenses/android-sdk-license"
           echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$ANDROID_HOME/licenses/android-sdk-license"
           echo "84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
@@ -57,16 +58,14 @@ jobs:
           echo "33b6a2b64607f11b759f320ef9dff4ae5c47d97a" > "$ANDROID_HOME/licenses/google-gdk-license"
           echo "e9acab5b5fbb560a72cfa4eec63b3ce86aab9d16" > "$ANDROID_HOME/licenses/mips-android-sysimage-license"
 
-          # Aceita licenças e instala platforms;android-36 e build-tools
+          # Aceita licenças adicionais
           if [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
             yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
-            echo "Verificando e instalando plataforma Android SDK 36..."
-            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" || true
-            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "build-tools;36.0.0" || true
           fi
 
       - name: Prepare Keystore and Environment
         run: |
+          # Restaura debug.keystore a partir de debug.keystore.base64
           if [ -f "debug.keystore.base64" ]; then
             echo "Restaurando debug.keystore a partir de debug.keystore.base64..."
             base64 -d debug.keystore.base64 > debug.keystore
@@ -77,6 +76,7 @@ jobs:
               -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
 
+          # Garante arquivo .env
           if [ ! -f ".env" ]; then
             if [ -f ".env.example" ]; then
               cp .env.example .env
@@ -85,13 +85,14 @@ jobs:
             fi
           fi
 
+          # Concede permissão de execução ao script gradlew
           chmod +x gradlew
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build Debug APK with Gradle
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: ./gradlew assembleDebug --no-daemon --no-configuration-cache --stacktrace
 
       - name: Locate Generated APK
         id: find_apk
