@@ -31,12 +31,37 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Prepare Debug Keystore and Environment
+      - name: Configure Android SDK & Licenses
         run: |
-          # Gera debug.keystore se arquivo base64 existir
+          # O runner ubuntu-latest do GitHub já possui o Android SDK pré-instalado em /usr/local/lib/android/sdk
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+
+          # Adiciona caminhos do SDK ao PATH
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+
+          # Pré-aprova todas as licenças do Android SDK
+          mkdir -p "$ANDROID_HOME/licenses"
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_HOME/licenses/android-sdk-license"
+          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$ANDROID_HOME/licenses/android-sdk-license"
+          echo "84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+          echo "79124426920f4f13df3e5e52471a4f152ff041f9" >> "$ANDROID_HOME/licenses/android-sdk-preview-license"
+          echo "601085b94cd77f0b54ff86406957099fed7926ce" > "$ANDROID_HOME/licenses/android-googletv-license"
+          echo "33b6a2b64607f11b759f320ef9dff4ae5c47d97a" > "$ANDROID_HOME/licenses/google-gdk-license"
+          echo "e9acab5b5fbb560a72cfa4eec63b3ce86aab9d16" > "$ANDROID_HOME/licenses/mips-android-sysimage-license"
+
+          # Aceita licenças interativamente caso haja novas atualizações
+          if [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+          fi
+
+      - name: Prepare Keystore and Environment
+        run: |
+          # Restaura debug.keystore se arquivo base64 existir
           if [ -f "debug.keystore.base64" ]; then
             echo "Restaurando debug.keystore a partir de debug.keystore.base64..."
             base64 -d debug.keystore.base64 > debug.keystore
@@ -47,7 +72,7 @@ jobs:
               -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
 
-          # Garante arquivo .env a partir do .env.example
+          # Garante arquivo .env a partir de .env.example
           if [ ! -f ".env" ] && [ -f ".env.example" ]; then
             cp .env.example .env
           fi
@@ -65,7 +90,7 @@ jobs:
         id: find_apk
         run: |
           APK_PATH=$(find app/build/outputs/apk/ -name "*.apk" | head -n 1)
-          echo "APK encontrado em: $APK_PATH"
+          echo "APK gerado em: $APK_PATH"
           echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
 
       - name: Upload APK as Workflow Artifact
