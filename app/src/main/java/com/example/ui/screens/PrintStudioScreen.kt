@@ -87,6 +87,15 @@ fun PrintStudioScreen(
         viewModel.setSelectedImageUri(uri)
     }
 
+    val documentPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            viewModel.setSelectedImageUri(uri)
+            viewModel.setDocumentTitle("Documento PDF / Arquivo Selecionado")
+        }
+    }
+
     var paperTypeExpanded by remember { mutableStateOf(false) }
     var paperSizeExpanded by remember { mutableStateOf(false) }
 
@@ -393,31 +402,61 @@ fun PrintStudioScreen(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Anexo de Imagem / Foto
-                    Row(
+                    // Anexo de Imagem / Foto ou Documento Diversos
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        OutlinedButton(
-                            onClick = { imagePickerLauncher.launch("image/*") },
-                            modifier = Modifier.testTag("attach_photo_btn")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Image,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = if (state.selectedImageUri != null) "Foto Anexada ✓" else "Anexar Imagem / Foto",
-                                fontSize = 12.sp
-                            )
+                            OutlinedButton(
+                                onClick = { imagePickerLauncher.launch("image/*") },
+                                modifier = Modifier.weight(1f).testTag("attach_photo_btn")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Image,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (state.selectedImageUri != null) "Foto Anexada ✓" else "Anexar Foto",
+                                    fontSize = 12.sp,
+                                    maxLines = 1
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            OutlinedButton(
+                                onClick = { documentPickerLauncher.launch(arrayOf("application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain", "*/*")) },
+                                modifier = Modifier.weight(1f).testTag("attach_document_btn")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Description,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (state.selectedImageUri != null) "Doc Anexado ✓" else "Anexar Documento",
+                                    fontSize = 12.sp,
+                                    maxLines = 1
+                                )
+                            }
                         }
 
                         if (state.selectedImageUri != null) {
-                            TextButton(onClick = { viewModel.setSelectedImageUri(null) }) {
-                                Text("Remover", fontSize = 11.sp, color = Color.Red)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                TextButton(onClick = { viewModel.setSelectedImageUri(null) }) {
+                                    Text("Remover Anexo", fontSize = 11.sp, color = Color.Red)
+                                }
                             }
                         }
                     }
