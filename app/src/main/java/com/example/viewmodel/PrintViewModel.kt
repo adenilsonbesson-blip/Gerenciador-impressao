@@ -24,27 +24,38 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 
 data class PrintUiState(
-    val printer: EpsonPrinterDevice = EpsonPrinterDevice(),
+    val printer: EpsonPrinterDevice = EpsonPrinterDevice(
+        id = "epson_l3250_main",
+        modelName = "Epson EcoTank L3250 (Wi-Fi)",
+        ipAddress = "192.168.15.86",
+        signalStrengthDbm = -48,
+        blackInkLevel = 88,
+        cyanInkLevel = 76,
+        magentaInkLevel = 92,
+        yellowInkLevel = 68
+    ),
     val discoveredPrinters: List<EpsonPrinterDevice> = listOf(
         EpsonPrinterDevice(
-            id = "epson_l3250_main",
+            id = "epson_l3250_detected",
             modelName = "Epson EcoTank L3250 (Wi-Fi)",
-            ipAddress = "192.168.1.150",
-            signalStrengthDbm = -54,
+            ipAddress = "192.168.15.86",
+            signalStrengthDbm = -48,
             blackInkLevel = 88,
             cyanInkLevel = 76,
             magentaInkLevel = 92,
-            yellowInkLevel = 68
+            yellowInkLevel = 68,
+            statusMessage = "Pronta na rede Wi-Fi (192.168.15.86)"
         ),
         EpsonPrinterDevice(
-            id = "epson_l4260_office",
-            modelName = "Epson EcoTank L4260 (Duplex)",
-            ipAddress = "192.168.1.162",
+            id = "epson_l3251_found",
+            modelName = "Epson EcoTank L3251",
+            ipAddress = "192.168.15.105",
             signalStrengthDbm = -65,
-            blackInkLevel = 45,
-            cyanInkLevel = 60,
-            magentaInkLevel = 55,
-            yellowInkLevel = 70
+            blackInkLevel = 65,
+            cyanInkLevel = 80,
+            magentaInkLevel = 70,
+            yellowInkLevel = 85,
+            statusMessage = "Pronta"
         )
     ),
     val isScanningWifi: Boolean = false,
@@ -219,21 +230,21 @@ class PrintViewModel(application: Application) : AndroidViewModel(application) {
                     isScanningWifi = false,
                     discoveredPrinters = listOf(
                         EpsonPrinterDevice(
-                            id = "epson_l3250_found",
-                            modelName = "Epson EcoTank L3250 (Wi-Fi)",
-                            ipAddress = "192.168.1.150",
-                            signalStrengthDbm = -52,
+                            id = "epson_l3250_wifi_auto",
+                            modelName = "Epson EcoTank L3250 (Wi-Fi Direto)",
+                            ipAddress = "192.168.15.86",
+                            signalStrengthDbm = -45,
                             blackInkLevel = 88,
                             cyanInkLevel = 76,
                             magentaInkLevel = 92,
                             yellowInkLevel = 68,
-                            statusMessage = "Pronta na rede Wi-Fi"
+                            statusMessage = "Encontrada na rede Wi-Fi (192.168.15.86)"
                         ),
                         EpsonPrinterDevice(
-                            id = "epson_l3251_found",
+                            id = "epson_l3251_secondary",
                             modelName = "Epson EcoTank L3251",
-                            ipAddress = "192.168.1.177",
-                            signalStrengthDbm = -68,
+                            ipAddress = "192.168.15.105",
+                            signalStrengthDbm = -65,
                             blackInkLevel = 65,
                             cyanInkLevel = 80,
                             magentaInkLevel = 70,
